@@ -10,29 +10,28 @@ data BinTree t = Empty | Root t (BinTree t) (BinTree t)
  -           3
  -
  - -}
-myTree = Root 5 (Root 1 (Empty) (Root 3 Empty Empty)) (Root 7 Empty Empty)
+myTree = Root 5 (Root 1 Empty (Root 3 Empty Empty)) (Root 7 Empty Empty)
 leaf x = Root x Empty Empty
-myTreel = Root 5 (Root 1 (Empty) (leaf 3)) (leaf 7)
-
+myTreel = Root 5 (Root 1 Empty (leaf 3)) (leaf 7)
 
 -- (a)
 addNode :: Ord a => a -> BinTree a -> BinTree a
 addNode a Empty = leaf a
 addNode a (Root value left right)
-    |   a > value = Root value (left) (addNode a right)
-    |   otherwise = Root value (addNode a left) (right)
+    |   a > value = Root value left (addNode a right)
+    |   otherwise = Root value (addNode a left) right
 
 
 -- (b)
 maketree :: Ord a => [a] -> BinTree a
-maketree (x:[]) = addNode x Empty
+maketree [x] = addNode x Empty
 maketree (x:xs) = addNode x (maketree xs)
 
 
 -- (c)
 inorder :: BinTree a -> [a]
 inorder Empty = []
-inorder (Root value left right) = (inorder left) ++ [value] ++ (inorder right)
+inorder (Root value left right) = inorder left ++ [value] ++ inorder right
 
 
 -- (c)
