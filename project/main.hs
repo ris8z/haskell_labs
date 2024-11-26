@@ -1,4 +1,3 @@
-import qualified Data.Map as Map
 import Data.List (intercalate)
 
 data Tree t =
@@ -41,53 +40,71 @@ height (Root1 {}) = 1
 height (Root2 _ _ left mid right) = 1 + max (height left) (max (height mid) (height right))
 
 
-
---mytree = add 8 (add 7 (add 2 (add 4 (add 5 (add 3 Empty)))))
-mytree = add 18 (add 20 (add 15 (add 6 (add 10 (add 3 Empty)))))
-
-
---you call it with toList tree 0 0
 toList :: (Show a) => Tree a -> Int -> Int -> [(String, Int, Int)]
-toList Empty lvl pos = []
-toList (Root1 x _ _) lvl pos = [(show x, lvl, pos)]
+toList Empty lvl pos = [("nil", lvl, pos)]
+toList (Root1 x left right) lvl pos = 
+  let
+    newLvl = lvl + 1 
+    newPos = pos * 3
+  in
+    [(show x, lvl, pos)]
+    ++ toList left newLvl newPos
+    ++ toList right newLvl (newPos + 2)
 toList (Root2 x1 x2 left mid right) lvl pos = 
   let
     newLvl = lvl + 1 
     newPos = pos * 3
   in
-    [(show (x1,x2), lvl, pos)] 
+    [(show x1 ++ "," ++ show x2, lvl, pos)] 
     ++ toList left newLvl newPos 
     ++ toList mid newLvl (newPos + 1)
     ++ toList right newLvl (newPos + 2)
+
 
 isSmaller :: (String, Int, Int) -> (String, Int, Int) -> Bool
 isSmaller (_, lvl1, pos1) (_, lvl2, pos2)
   | lvl1 == lvl2 = pos1 < pos2
   | otherwise    = lvl1 < lvl2
 
+
 sort :: (a -> a -> Bool) -> [a] -> [a]
 sort f [] = []
 sort f (x:xs) =
-    let small = sort f [a | a <- xs, f a x]
-        big   = sort f [a | a <- xs, not(f a x)]
-    in small ++ [x] ++ big
+    let 
+      small = sort f [a | a <- xs, f a x]
+      big   = sort f [a | a <- xs, not(f a x)]
+    in
+      small ++ [x] ++ big
 
-prettyPrint :: (Show a) => Tree a -> String
-prettyPrint tree =
+prettyPrintHelper :: (Show a) => Tree a -> String
+prettyPrintHelper tree =
   let
-    nodeList = sort isSmaller (toList tree 0 0)  -- Convertiamo l'albero in una lista ordinata
-    maxLevel = maximum [lvl | (_, lvl, _) <- nodeList]  -- Troviamo il livello massimo
-    width = 3 ^ maxLevel * 3  -- Larghezza della linea più lunga
+    nodeList = sort isSmaller (toList tree 0 0) 
+    maxLevel = maximum [lvl | (_, lvl, _) <- nodeList] 
+    width = 3 ^ maxLevel * 3
+    formatLevel :: Int -> String
     formatLevel lvl = 
       let
-        nodesAtLevel = [(val, pos) | (val, l, pos) <- nodeList, l == lvl]  -- Nodi di un livello
-        line = replicate width ' '  -- Linea inizialmente vuota
+        nodesAtLevel = [(val, pos) | (val, l, pos) <- nodeList, l == lvl]
+        line = replicate width ' '  
+        placeNodes :: [(String,Int)] -> String -> String
         placeNodes [] line = line
         placeNodes ((val, pos):ns) line =
           let
-            spacing = width `div` (3 ^ lvl)  -- Spazi tra nodi a questo livello
-            idx = pos * spacing + spacing `div` 2  -- Posizione centrata del nodo
-            newLine = take idx line ++ val ++ drop (idx + length val) line
-          in placeNodes ns newLine
-      in placeNodes nodesAtLevel line
-  in unlines [formatLevel lvl | lvl <- [0..maxLevel]]
+            spacing = width `div` (3 ^ lvl) 
+            idx = pos * spacing + spacing `div` 2
+            newLine = take idx line ++ val ++ drop (idx + length val) line -- here
+          in
+            placeNodes ns newLine
+      in 
+        placeNodes nodesAtLevel line
+  in
+    unlines $ intercalate [""] [[formatLevel lvl] | lvl <- [0..maxLevel]]
+
+
+--prettyPrint(T) is always true and displays the 2-3 Tree T
+prettyPrint :: (Show a) => Tree a -> IO ()
+prettyPrint a = putStrLn (prettyPrintHelper a)
+
+
+mytree = add 18 (add 20 (add 15 (add 6 (add 10 (add 3 Empty)))))
